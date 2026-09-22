@@ -110,6 +110,15 @@ SECTIONS = [
 ]
 
 
+def format_timecode(seconds: float) -> str:
+    """Format seconds as a filename-safe MM:SS[.fraction] timecode."""
+    minutes = int(seconds // 60)
+    remaining = seconds - minutes * 60
+    if abs(remaining - round(remaining)) < 1e-6:
+        return f"{minutes:02d}:{int(round(remaining)):02d}"
+    return f"{minutes:02d}:{remaining:05.2f}"
+
+
 def find_input() -> Path:
     for name in ("org.mp3", "org.MP3", "ORG.MP3"):
         candidate = ROOT / name
@@ -149,7 +158,11 @@ def main() -> None:
         number = section["number"]
         target_duration = section["goal_end"] - section["goal_start"]
         source_duration = section["source_end"] - section["source_start"]
-        output_file = OUTPUT / f"{number}.mp3"
+        output_name = (
+            f"[{format_timecode(section['goal_start'])}]"
+            f"-[{format_timecode(section['goal_end'])}].mp3"
+        )
+        output_file = OUTPUT / output_name
 
         if section.get("missing_source_audio"):
             command = [
